@@ -4,11 +4,15 @@ version = "0.1.0"
 description = "Personal AI assistant."
 authors = ["Eric Simpson <eric.gr.simpson@gmail.com>"]
 readme = "README.md"
+packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 arxiv = "^2.1.3"
 piper-tts = "^1.2.0"
+click = "^8.1.8"
+pyyaml = "^6.0.2"
+sentence-transformers = "^3.4.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.2.1"
@@ -25,6 +29,9 @@ skjold = ">=0.6.1"
 flake8 = ">=6.0.0"
 coverage = ">=7.2.7"
 ipython = "^8.32.0"
+
+[tool.poetry.scripts]
+hansen = "src.cli.entrypoint:run"
 
 [tool.coverage.html]
 skip_empty = true

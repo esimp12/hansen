@@ -1,0 +1,20 @@
+---
+commands:
+  - name: "Create note"
+    type: "intake"
+    action: "create_note"
+    params:
+      - name: "directory"
+        type: "string"
+      - name: "filename"
+        type: "string"
+  - name: "Record notes"
+    type: "process"
+    action: "record_notes"
+    params:
+      - name: "directory"
+        type: "string"
+      - name: "filename"
+        type: "string"
+      - name: "notes"
+        type: "string"

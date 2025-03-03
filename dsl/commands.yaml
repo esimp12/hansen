@@ -1,8 +1,0 @@
-commands:
-  - name: "Read academic articles"
-    type:
-    action: "fetch_articles"
-    parameters:
-      source: "scholarly"
-      keywords: ["machine learning", "NLP"]
-      limit: 5
