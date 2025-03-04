@@ -8,6 +8,8 @@ import typing_extensions as T
 import yaml
 from sentence_transformers import SentenceTransformer
 
+from src.actions import load_action
+
 
 class CommandType(Enum):
     INTAKE = "intake"
@@ -35,10 +37,11 @@ def load_commands() -> T.List[Command]:
 
 
 def _create_command(cmd: T.Mapping[str, T.Any]) -> Command:
+    action = load_action(cmd["action"])
     return Command(
         name=cmd["name"],
         command_type=CommandType.from_str(cmd["type"]),
-        action=cmd["action"],
+        action=action,
         params=cmd["params"],
     )
 
@@ -56,7 +59,10 @@ def query_command_similarities(
 
     prompt_embedding = model.encode(prompt)
     command_embeddings = model.encode([cmd.name for cmd in commands])
-    similarities = model.similarity(prompt_embedding, command_embeddings)
+    similarities = model.similarity(
+        prompt_embedding,
+        command_embeddings,  # type: ignore
+    )
     similarities = similarities.squeeze(0).tolist()
     return sorted(
         zip(commands, similarities),

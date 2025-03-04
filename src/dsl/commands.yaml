@@ -8,9 +8,9 @@ commands:
         type: "string"
       - name: "filename"
         type: "string"
-  - name: "Record notes"
+  - name: "Record note"
     type: "process"
-    action: "record_notes"
+    action: "record_note"
     params:
       - name: "directory"
         type: "string"
