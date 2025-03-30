@@ -1,5 +1,14 @@
 ### Working
 
-- [ ] Make a workflow of converting a natural language prompt (from the CLI) to a DSL command type that then calls the appropriate function in the DSL module. (e.g. "Read scholarly articles about statistics" -> find_articles -> print_articles)
-  - [ ] Implement note taking functionality commanding loop (e.g. "start note taking session" -> opens file -> "here is a natural language prompt" -> gets result -> writes to file -> continue until done ... -> "end note taking session" -> closes file -> save file)
-  - [ ] Determine which foundational model to use (consider something small <= 4GB that can fit on a raspberry pi)
+- [ ] Finish naive parameter search implementation
+  - [ ] Extract keyphrases from the prompt
+  - For each parameter
+    - Compute the similarity to each keyphrase
+    - For each keyphrase compute the similarity of each word in the keyphrase to the parameter name
+      - Naively choose the phrase after the highest similarity score as the parameter value
+      - Clean the parameter value for unlikely characters
+    - Display the chosen parameter name and values for each parameter keyphrase combination
+    - Include an option to manually supply the parameter value
+    - Repeat for each parameter
+- [ ] Look into converting command loop into a Command pattern
+  - We want to be able to wrap and insert command into the command loop programatically and not always wait for user input

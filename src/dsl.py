@@ -1,62 +1,67 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 import typing_extensions as T
 import yaml
+from pke.unsupervised import TopicRank
 from sentence_transformers import SentenceTransformer
 
 from src.actions import load_action
+from src.command import CommandOptions
 
 
-class CommandType(Enum):
-    INTAKE = "intake"
-    PROCESS = "process"
-
-    @classmethod
-    def from_str(cls, value: str) -> CommandType:
-        value = value.lower()
-        return cls(value)
-
-
-@dataclass
-class Command:
-    name: str
-    command_type: CommandType
-    action: T.Callable
-    params: T.Mapping[str, T.Any]
-
-
-def load_commands() -> T.List[Command]:
+def load_command_options(prompt: str = "") -> T.List[CommandOptions]:
     commands_path = Path(__file__).parent / "dsl" / "commands.yaml"
     with open(commands_path, encoding="utf-8") as fd:
         dsl = yaml.safe_load(fd)
-    return [_create_command(cmd) for cmd in dsl["commands"]]
+    return [_create_command_options(cmd, prompt=prompt) for cmd in dsl["commands"]]
 
 
-def _create_command(cmd: T.Mapping[str, T.Any]) -> Command:
+def _create_command_options(
+    cmd: T.Mapping[str, T.Any],
+    prompt: str = "",
+    reserved_params: T.Optional[T.List[str]] = None,
+) -> CommandOptions:
+    if reserved_params is None:
+        reserved_params = []
+    reserved_params.append("history")
+    reserved_params.append("return")
+
     action = load_action(cmd["action"])
-    return Command(
+    param_types = T.get_type_hints(action)
+    params = [(pn, pt) for pn, pt in param_types.items() if pn not in reserved_params]
+    return CommandOptions(
         name=cmd["name"],
-        command_type=CommandType.from_str(cmd["type"]),
         action=action,
-        params=cmd["params"],
+        params=params,
+        prompt=prompt,
     )
 
 
-def load_model(model_name: str = "all-MiniLM-L12-v2") -> SentenceTransformer:
-    return SentenceTransformer(model_name)
-
-
-def query_command_similarities(
-    prompt: str,
-    commands: T.List[Command],
+def get_most_similar_word(
+    keyword: str,
+    phrase: str,
     model_name: str = "all-MiniLM-L12-v2",
-) -> T.List[T.Tuple[Command, float]]:
-    model = load_model(model_name)
+) -> T.Tuple[str, float]:
+    model = SentenceTransformer(model_name)
+    keyword_embedding = model.encode(keyword)
 
+    similarities = []
+    for word in phrase.split():
+        word_embedding = model.encode(word)
+        similarity = model.similarity(
+            keyword_embedding,
+            word_embedding,  # type: ignore
+        )
+        similarities.append((word, similarity.item()))
+    return max(similarities, key=lambda x: x[1])
+
+
+def query_command_options(
+    prompt: str,
+    commands: T.List[CommandOptions],
+    model_name: str = "all-MiniLM-L12-v2",
+) -> T.List[T.Tuple[CommandOptions, float]]:
+    model = SentenceTransformer(model_name)
     prompt_embedding = model.encode(prompt)
     command_embeddings = model.encode([cmd.name for cmd in commands])
     similarities = model.similarity(
@@ -69,3 +74,12 @@ def query_command_similarities(
         key=lambda x: x[1],
         reverse=True,
     )
+
+
+def query_keyphrases(command: CommandOptions) -> T.List[T.Tuple[str, float]]:
+    extractor = TopicRank()
+    extractor.load_document(input=command.prompt, language="en")
+    extractor.candidate_selection()
+    extractor.candidate_weighting()
+    keyphrases = extractor.get_n_best(n=5)
+    return keyphrases

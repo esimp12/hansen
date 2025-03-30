@@ -1,14 +1,33 @@
+from pathlib import Path
+
 import typing_extensions as T
 
-
-def create_note() -> str:
-    return "Created note at /path/to/note."
+from src.command import Result
 
 
-def record_note(note_path: str, notes: T.List[str]) -> str:
-    with open(note_path, "w") as fd:
-        fd.write("\n".join(notes))
-    return f"Recorded notes at {note_path}."
+def create_note(filename: str, history: T.List[Result]) -> T.Tuple[str, str]:
+    note = Path(filename)
+    if note.exists():
+        raise RuntimeError(f"Note already exists at {filename}.")
+
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.touch()
+    return filename, f"Created note at {filename}."
+
+
+def record_note(
+    note_path: str,
+    notes: str,
+    history: T.List[Result],
+) -> T.Tuple[str, str]:
+    note = Path(note_path)
+    if not note.exists():
+        raise RuntimeError(f"Note does not exist at {note_path}.")
+    if not note.is_file():
+        raise RuntimeError(f"Note is not a file at {note_path}.")
+
+    note.write_text(f"{notes}\n", encoding="utf-8")
+    return "Ok", f"Recorded notes at {note_path}."
 
 
 _ACTION_MAPPING: T.Mapping[str, T.Callable] = {
